@@ -1,0 +1,37 @@
+{
+  "name": "EtiquetaPro — Gerador de Etiquetas A4",
+  "short_name": "EtiquetaPro",
+  "description": "Gerador de etiquetas personalizadas para impressão A4 e Carta.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8f9fb",
+  "theme_color": "#1a56db",
+  "lang": "pt-BR",
+  "categories": [
+    "utilities",
+    "productivity",
+    "office"
+  ],
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

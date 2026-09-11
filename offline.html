@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1a56db">
+  <title>Offline — EtiquetaPro</title>
+  <style>
+    :root {
+      --azul: #1a56db;
+      --azul-hover: #1648b8;
+      --cinza-bg: #f8f9fb;
+      --cinza-borda: #e2e6ea;
+      --cinza-texto: #5a6270;
+      --preto: #1a1d23;
+      --branco: #ffffff;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--cinza-bg);
+      color: var(--preto);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .card {
+      background: var(--branco);
+      border: 1px solid var(--cinza-borda);
+      border-radius: var(--radius);
+      padding: 36px 28px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+    h1 {
+      font-size: 1.35rem;
+      margin-bottom: 10px;
+      color: var(--preto);
+    }
+    p {
+      font-size: 0.92rem;
+      color: var(--cinza-texto);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: var(--azul);
+      color: var(--branco);
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      width: 100%;
+    }
+    .btn:hover { background: var(--azul-hover); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="icon">📐</div>
+    <h1>Você está desconectado</h1>
+    <p>O EtiquetaPro funciona normalmente offline quando já instalado ou previamente carregado no seu navegador.</p>
+    <a href="./index.html" class="btn">Tentar Acessar o Aplicativo</a>
+  </main>
+</body>
+</html>
