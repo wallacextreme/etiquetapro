@@ -2,7 +2,17 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a56db">
+<meta name="description" content="Gerador de etiquetas personalizadas para impressão A4 e Carta. Gabaritos Pimaco, controle milimétrico e funcionamento offline.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="EtiquetaPro">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/x-icon" href="./favicon.ico">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
 <title>EtiquetaPro — Gerador Múltiplo de Etiquetas Customizadas</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -25,8 +35,12 @@
     --shadow-card: 0 2px 12px rgba(0,0,0,0.1);
     --radius: 10px;
     --radius-sm: 6px;
-    --font: 'DM Sans', system-ui, sans-serif;
-    --mono: 'JetBrains Mono', monospace;
+    --font: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -195,18 +209,210 @@
   .modal-box textarea { font-family: var(--mono); font-size: 0.8rem; min-height: 150px; background: var(--cinza-bg); margin-top: 10px; width: 100%; }
   .modal-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
 
-  #toast { position: fixed; bottom: 20px; right: 20px; background: var(--preto); color: white; padding: 10px 16px; border-radius: var(--radius-sm); font-size: 0.85rem; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.2s; }
+  #toast { position: fixed; bottom: calc(20px + var(--safe-bottom)); right: 20px; background: var(--preto); color: white; padding: 10px 16px; border-radius: var(--radius-sm); font-size: 0.85rem; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.2s; }
   #toast.visivel { transform: translateY(0); opacity: 1; }
   #toast.sucesso { background: var(--verde); }
   #toast.erro { background: var(--vermelho); }
 
-  /* ── IMPRESSÃO MILIMÉTRICA ── */
+  /* ── BOTÃO DE INSTALAÇÃO PWA ── */
+  .btn-instalacao {
+    background: linear-gradient(135deg, #10b981, #057a55);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 2px 8px rgba(5, 122, 85, 0.25);
+  }
+  .btn-instalacao:hover {
+    background: linear-gradient(135deg, #057a55, #046c4e);
+    color: #ffffff;
+  }
+
+  /* ── ABAS DE NAVEGAÇÃO MOBILE ── */
+  #mobile-tabs {
+    display: none;
+    background: var(--branco);
+    border-bottom: 1px solid var(--cinza-borda);
+    position: sticky;
+    top: 0;
+    z-index: 90;
+  }
+  .mobile-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 10px;
+    min-height: 48px;
+    font-family: var(--font);
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--cinza-texto);
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+  }
+  .mobile-tab-btn.ativo {
+    color: var(--azul);
+    border-bottom-color: var(--azul);
+    background: var(--azul-claro);
+  }
+  .tab-badge {
+    background: var(--azul);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-family: var(--mono);
+  }
+
+  /* ── BARRA DE ZOOM / FIT-TO-SCREEN NA PRÉVIA ── */
+  #preview-zoom-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: var(--folha-w, 210mm);
+    background: var(--branco);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--cinza-borda);
+    gap: 8px;
+    margin-bottom: 4px;
+    box-sizing: border-box;
+  }
+  .zoom-botoes {
+    display: flex;
+    gap: 6px;
+  }
+  .zoom-btn.ativo {
+    background: var(--azul);
+    color: white;
+    border-color: var(--azul);
+  }
+
+  #viewport-folha {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    transition: all 0.2s ease;
+  }
+
+  /* ── REGRAS RESPONSIVAS MOBILE (< 900px) ── */
+  @media (max-width: 900px) {
+    #header {
+      padding: 10px 16px;
+      position: static;
+    }
+    .logo { font-size: 1.05rem; }
+    .header-actions {
+      flex-wrap: wrap;
+    }
+    .header-actions .btn {
+      min-height: 40px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+    }
+
+    #mobile-tabs {
+      display: flex;
+    }
+
+    #app {
+      display: block;
+      min-height: auto;
+      padding-bottom: calc(20px + var(--safe-bottom));
+      padding-left: var(--safe-left);
+      padding-right: var(--safe-right);
+    }
+
+    #painel {
+      height: auto;
+      position: static;
+      border-right: none;
+      padding: 16px 14px;
+      max-width: 100%;
+    }
+
+    #area-previa {
+      padding: 14px 8px;
+      min-height: auto;
+      overflow-x: hidden;
+    }
+
+    #stats-bar {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+    .stat-card {
+      padding: 10px;
+    }
+    .stat-valor {
+      font-size: 1.1rem;
+    }
+
+    #preview-zoom-bar {
+      display: flex;
+    }
+
+    .oculto-mobile {
+      display: none !important;
+    }
+
+    /* Otimização de áreas de toque (Touch Targets >= 44px) */
+    .btn {
+      min-height: 44px;
+    }
+    input[type="text"], input[type="number"], select {
+      min-height: 44px;
+      font-size: 16px; /* Evita auto-zoom incômodo no Android/iOS */
+    }
+    .pos-btn {
+      min-height: 44px;
+      min-width: 44px;
+      font-size: 1rem;
+    }
+    .tema-cor {
+      width: 34px;
+      height: 34px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    #header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .header-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      width: 100%;
+    }
+    #btnImprimirHead {
+      grid-column: span 2;
+    }
+    #btnInstalarApp {
+      grid-column: span 2;
+    }
+  }
+
+  /* ── IMPRESSÃO MILIMÉTRICA PRESERVADA ── */
   @media print {
     body { background: none; }
-    #header, #painel, #stats-bar, #toast, #modal-overlay { display: none !important; }
-    #app { display: block; }
-    #area-previa { padding: 0; background: none; overflow: visible; }
-    #wrapper-etiquetas { box-shadow: none; }
+    #header, #mobile-tabs, #preview-zoom-bar, #painel, #stats-bar, #toast, #modal-overlay { display: none !important; }
+    #app { display: block !important; }
+    #area-previa { display: block !important; padding: 0 !important; background: none !important; overflow: visible !important; }
+    #viewport-folha { display: block !important; overflow: visible !important; }
+    #wrapper-etiquetas { box-shadow: none !important; transform: none !important; margin: 0 !important; }
     .etiqueta { border-color: transparent !important; }
     .etiqueta-num { display: none !important; }
   }
@@ -217,15 +423,28 @@
 <header id="header">
   <div class="logo">
     <div class="logo-icon">📐</div>
-    <span>EtiquetaPro</span>
-    <span class="logo-badge">Pimaco Edition</span>
+    <div>
+      <span>EtiquetaPro</span>
+      <span class="logo-badge">Pimaco Edition</span>
+    </div>
   </div>
   <div class="header-actions">
+    <button class="btn btn-instalacao btn-sm" id="btnInstalarApp" style="display:none;" title="Instalar aplicativo no Android/dispositivo">📲 Instalar App</button>
     <button class="btn btn-outline btn-sm" id="btnExportar">💾 Exportar Config</button>
     <button class="btn btn-outline btn-sm" id="btnImportar">📂 Importar Config</button>
     <button class="btn btn-primario btn-sm" id="btnImprimirHead">🖨️ Imprimir Folhas</button>
   </div>
 </header>
+
+<nav id="mobile-tabs" aria-label="Navegação mobile">
+  <button type="button" class="mobile-tab-btn ativo" id="tabConfigBtn">
+    <span>⚙️ Configurações</span>
+  </button>
+  <button type="button" class="mobile-tab-btn" id="tabPreviaBtn">
+    <span>👁️ Ver Folha</span>
+    <span class="tab-badge" id="mobileCountBadge">0</span>
+  </button>
+</nav>
 
 <div id="app">
   <aside id="painel">
@@ -445,7 +664,7 @@
 
   </aside>
 
-  <main id="area-previa">
+  <main id="area-previa" class="oculto-mobile">
     <div id="stats-bar">
       <div class="stat-card"><div class="stat-label">Total Etiquetas</div><div class="stat-valor" id="statTotal">0</div></div>
       <div class="stat-card"><div class="stat-label" id="lblPorFolha">Por Folha</div><div class="stat-valor" id="statPorFolha">0</div></div>
@@ -453,8 +672,18 @@
       <div class="stat-card"><div class="stat-label">Dimensões</div><div class="stat-valor" id="statDim">0 x 0 mm</div></div>
     </div>
 
-    <div id="wrapper-etiquetas">
-      <div id="container-etiquetas"></div>
+    <div id="preview-zoom-bar">
+      <div class="zoom-botoes">
+        <button type="button" class="btn btn-outline btn-sm zoom-btn ativo" id="btnZoomFit">📐 Ajustar à Tela</button>
+        <button type="button" class="btn btn-outline btn-sm zoom-btn" id="btnZoom100">100% Real</button>
+      </div>
+      <button type="button" class="btn btn-primario btn-sm" id="btnImprimirMobile">🖨️ Imprimir</button>
+    </div>
+
+    <div id="viewport-folha">
+      <div id="wrapper-etiquetas">
+        <div id="container-etiquetas"></div>
+      </div>
     </div>
   </main>
 </div>
@@ -1091,6 +1320,10 @@ function gerar() {
   const isCustom = selMedida === 'custom';
   document.getElementById('lblPorFolha').textContent = isCustom ? `Por Folha (${colunas}x${linhas})` : `Por Folha (${colunas} col × ${linhas} lin)`;
   document.getElementById('lblFolhas').textContent = `Folhas Necessárias`;
+
+  const mobileBadge = document.getElementById('mobileCountBadge');
+  if (mobileBadge) mobileBadge.textContent = contadorGlobal;
+  ajustarEscalaPreviaMobile();
 }
 
 function atualizarListaFilaVisual() {
@@ -1298,7 +1531,143 @@ function inicializarEventos() {
       toast('Configurações aplicadas com sucesso!', 'sucesso');
     } catch(err) { alert('JSON inválido ou corrompido.'); }
   });
+
+  // Eventos de abas mobile e zoom de visualização
+  const tabCfg = document.getElementById('tabConfigBtn');
+  const tabPrv = document.getElementById('tabPreviaBtn');
+  if (tabCfg) tabCfg.addEventListener('click', () => alternarAbaMobile('config'));
+  if (tabPrv) tabPrv.addEventListener('click', () => alternarAbaMobile('previa'));
+
+  const btnZFit = document.getElementById('btnZoomFit');
+  const btnZ100 = document.getElementById('btnZoom100');
+  if (btnZFit) btnZFit.addEventListener('click', () => definirModoZoom('fit'));
+  if (btnZ100) btnZ100.addEventListener('click', () => definirModoZoom('100'));
+
+  const btnImpMob = document.getElementById('btnImprimirMobile');
+  if (btnImpMob) btnImpMob.addEventListener('click', () => window.print());
 }
+
+// ── CONTROLADORES MOBILE & FIT-TO-SCREEN ──
+let modoZoomPrevia = 'fit';
+
+function alternarAbaMobile(aba) {
+  const tabCfg = document.getElementById('tabConfigBtn');
+  const tabPrv = document.getElementById('tabPreviaBtn');
+  const painel = document.getElementById('painel');
+  const areaPrevia = document.getElementById('area-previa');
+
+  if (aba === 'config') {
+    if (tabCfg) tabCfg.classList.add('ativo');
+    if (tabPrv) tabPrv.classList.remove('ativo');
+    if (painel) painel.classList.remove('oculto-mobile');
+    if (areaPrevia) areaPrevia.classList.add('oculto-mobile');
+  } else {
+    if (tabPrv) tabPrv.classList.add('ativo');
+    if (tabCfg) tabCfg.classList.remove('ativo');
+    if (painel) painel.classList.add('oculto-mobile');
+    if (areaPrevia) areaPrevia.classList.remove('oculto-mobile');
+    requestAnimationFrame(() => ajustarEscalaPreviaMobile());
+  }
+}
+
+function definirModoZoom(modo) {
+  modoZoomPrevia = modo;
+  const btnFit = document.getElementById('btnZoomFit');
+  const btn100 = document.getElementById('btnZoom100');
+  if (btnFit && btn100) {
+    btnFit.classList.toggle('ativo', modo === 'fit');
+    btn100.classList.toggle('ativo', modo === '100');
+  }
+  ajustarEscalaPreviaMobile();
+}
+
+function ajustarEscalaPreviaMobile() {
+  const wrapper = document.getElementById('wrapper-etiquetas');
+  const viewport = document.getElementById('viewport-folha');
+  if (!wrapper || !viewport) return;
+
+  const isMobile = window.innerWidth <= 900;
+  if (!isMobile || modoZoomPrevia === '100') {
+    wrapper.style.transform = '';
+    wrapper.style.transformOrigin = '';
+    wrapper.style.marginBottom = '';
+    return;
+  }
+
+  const primeiraPagina = wrapper.querySelector('.pagina-a4');
+  if (!primeiraPagina) return;
+
+  const folhaLarguraPx = primeiraPagina.offsetWidth;
+  const viewportLarguraPx = viewport.clientWidth - 16;
+
+  if (folhaLarguraPx > 0 && viewportLarguraPx > 0 && folhaLarguraPx > viewportLarguraPx) {
+    const escala = viewportLarguraPx / folhaLarguraPx;
+    wrapper.style.transform = `scale(${escala})`;
+    wrapper.style.transformOrigin = 'top center';
+    const alturaOriginal = wrapper.offsetHeight;
+    const margemCompensacao = -((1 - escala) * alturaOriginal);
+    wrapper.style.marginBottom = `${margemCompensacao}px`;
+  } else {
+    wrapper.style.transform = '';
+    wrapper.style.transformOrigin = '';
+    wrapper.style.marginBottom = '';
+  }
+}
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    const painel = document.getElementById('painel');
+    const previa = document.getElementById('area-previa');
+    if (painel) painel.classList.remove('oculto-mobile');
+    if (previa) previa.classList.remove('oculto-mobile');
+  }
+  ajustarEscalaPreviaMobile();
+});
+
+// ── REGISTRO DO SERVICE WORKER (OFFLINE-FIRST) ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then((reg) => {
+        console.log('[PWA] Service Worker registrado com sucesso no escopo:', reg.scope);
+      })
+      .catch((err) => {
+        console.warn('[PWA] Falha ao registrar Service Worker:', err);
+      });
+  });
+}
+
+// ── GERENCIAMENTO DO EVENTO DE INSTALAÇÃO DO PWA (ANDROID/CHROME) ──
+let deferredInstallPrompt = null;
+const btnInstalar = document.getElementById('btnInstalarApp');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (btnInstalar) {
+    btnInstalar.style.display = 'inline-flex';
+  }
+});
+
+if (btnInstalar) {
+  btnInstalar.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    btnInstalar.style.display = 'none';
+    deferredInstallPrompt.prompt();
+    try {
+      const choiceResult = await deferredInstallPrompt.userChoice;
+      console.log('[PWA] Resposta da instalação:', choiceResult.outcome);
+    } catch (err) {
+      console.error('[PWA] Erro na instalação:', err);
+    }
+    deferredInstallPrompt = null;
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  if (btnInstalar) btnInstalar.style.display = 'none';
+  toast('EtiquetaPro instalado com sucesso no seu dispositivo!', 'sucesso');
+});
 </script>
 </body>
 </html>
