@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EtiquetaPro — Gerador Múltiplo de Etiquetas Customizadas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --azul: #1a56db;
+    --azul-claro: #e8f0fe;
+    --verde: #057a55;
+    --verde-claro: #e3fcef;
+    --laranja: #d97706;
+    --laranja-hover: #b45309;
+    --cinza-bg: #f8f9fb;
+    --cinza-borda: #e2e6ea;
+    --cinza-texto: #5a6270;
+    --branco: #ffffff;
+    --preto: #1a1d23;
+    --vermelho: #c0392b;
+    --amarelo-aviso: #fffbeb;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08);
+    --shadow-card: 0 2px 12px rgba(0,0,0,0.1);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --font: 'DM Sans', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--cinza-bg);
+    color: var(--preto);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  #header {
+    background: var(--branco);
+    border-bottom: 1px solid var(--cinza-borda);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1.15rem; color: var(--preto); }
+  .logo-icon { width: 32px; height: 32px; background: var(--azul); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+  .logo-badge { font-size: 0.65rem; font-weight: 600; background: var(--azul); color: white; padding: 2px 7px; border-radius: 99px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ── LAYOUT PRINCIPAL ── */
+  #app {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    max-width: 1440px;
+    margin: 0 auto;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* ── PAINEL LATERAL ── */
+  #painel {
+    background: var(--branco);
+    border-right: 1px solid var(--cinza-borda);
+    padding: 24px 20px;
+    overflow-y: auto;
+    height: calc(100vh - 60px);
+    position: sticky;
+    top: 60px;
+  }
+
+  .secao { margin-bottom: 24px; background: #fff; }
+  .secao-titulo {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--cinza-texto); padding-bottom: 10px; border-bottom: 1px solid var(--cinza-borda);
+    margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+  }
+
+  .campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .campo label { font-size: 0.82rem; font-weight: 500; color: var(--cinza-texto); display: flex; align-items: center; justify-content: space-between; }
+  .campo label span.valor-atual { font-family: var(--mono); font-size: 0.78rem; color: var(--azul); font-weight: 500; }
+
+  textarea, input[type="text"], input[type="number"], select {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--cinza-borda);
+    border-radius: var(--radius-sm); font-family: var(--font); font-size: 0.9rem;
+    color: var(--preto); background: var(--branco); outline: none; transition: border-color 0.15s;
+  }
+  select:disabled { background: var(--cinza-bg); color: var(--cinza-texto); cursor: not-allowed; }
+
+  textarea:focus, input[type="text"]:focus, input[type="number"]:focus, select:focus {
+    border-color: var(--azul); box-shadow: 0 0 0 3px rgba(26,86,219,0.1);
+  }
+
+  input[type="range"] { width: 100%; height: 5px; appearance: none; background: var(--cinza-borda); border-radius: 99px; outline: none; cursor: pointer; }
+  input[type="range"]::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; background: var(--azul); border-radius: 50%; cursor: pointer; }
+  input[type="color"] { width: 100%; height: 38px; border: 1.5px solid var(--cinza-borda); border-radius: var(--radius-sm); padding: 3px 6px; cursor: pointer; background: var(--branco); }
+
+  .checks { display: flex; gap: 12px; flex-wrap: wrap; }
+  .check-item { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: var(--cinza-texto); user-select: none; }
+  .check-item input[type="checkbox"], .check-item input[type="radio"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--azul); }
+
+  .medida-custom { display: none; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--cinza-bg); padding: 10px; border-radius: var(--radius-sm); margin-top: 8px; }
+  .medida-custom.ativo { display: grid; }
+
+  /* Upload de Imagem */
+  #upload-zona { border: 2px dashed var(--cinza-borda); border-radius: var(--radius-sm); padding: 14px; text-align: center; cursor: pointer; background: var(--cinza-bg); font-size: 0.82rem; color: var(--cinza-texto); }
+  #upload-zona:hover { border-color: var(--azul); color: var(--azul); }
+  #upload-zona.com-imagem { border-style: solid; border-color: var(--verde); background: var(--verde-claro); color: var(--verde); }
+
+  .posicao-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; max-width: 180px; }
+  .pos-btn { padding: 6px; text-align: center; border: 1.5px solid var(--cinza-borda); border-radius: var(--radius-sm); cursor: pointer; background: white; font-size: 0.85rem; }
+  .pos-btn:hover, .pos-btn.ativo { border-color: var(--azul); background: var(--azul-claro); color: var(--azul); }
+
+  .temas-cores { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tema-cor { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; position: relative; overflow: hidden; box-shadow: var(--shadow); }
+  .tema-cor.ativo { border-color: var(--azul); transform: scale(1.1); }
+  .tema-cor::before { content:''; position:absolute; left:0; width:50%; height:100%; background:var(--tema-texto); }
+  .tema-cor::after { content:''; position:absolute; right:0; width:50%; height:100%; background:var(--tema-fundo); }
+
+  /* ── BOTÕES ── */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; border-radius: var(--radius-sm); font-family: var(--font); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; }
+  .btn-primario { background: var(--azul); color: white; width: 100%; }
+  .btn-sucesso { background: var(--verde); color: white; width: 100%; }
+  .btn-outline { background: var(--branco); color: var(--cinza-texto); border: 1.5px solid var(--cinza-borda); }
+  .btn-outline:hover { border-color: var(--azul); color: var(--azul); background: var(--azul-claro); }
+  .btn-sm { padding: 6px 11px; font-size: 0.8rem; width: auto; }
+
+  #lista-itens-container { background: var(--cinza-bg); border: 1px solid var(--cinza-borda); border-radius: var(--radius-sm); max-height: 150px; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 5px; }
+  .fila-item { display: flex; justify-content: space-between; align-items: center; background: var(--branco); padding: 6px 10px; border-radius: 4px; border: 1px solid var(--cinza-borda); font-size: 0.82rem; }
+  .btn-deletar-item { background: none; border: none; color: var(--vermelho); cursor: pointer; font-weight: bold; }
+
+  /* ── ÁREA DE PRÉVIA ── */
+  #area-previa { padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 20px; min-height: calc(100vh - 60px); background: #edf0f5; overflow-y: auto; }
+
+  #stats-bar { display: flex; gap: 12px; width: 100%; max-width: var(--folha-w, 210mm); }
+  .stat-card { background: var(--branco); border-radius: var(--radius); padding: 12px 14px; flex: 1; border: 1px solid var(--cinza-borda); }
+  .stat-label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; color: var(--cinza-texto); }
+  .stat-valor { font-size: 1.3rem; font-weight: 600; font-family: var(--mono); }
+
+  #wrapper-etiquetas { background: white; box-shadow: var(--shadow-card); position: relative; transition: all 0.3s ease; }
+  
+  /* Container e Páginas Milimétricos baseados no tamanho real da folha */
+  #container-etiquetas { width: var(--folha-w, 210mm); background: white; min-height: var(--folha-h, 297mm); }
+  
+  .pagina-a4 { 
+    width: var(--folha-w, 210mm); 
+    height: var(--folha-h, 297mm); 
+    background: white; 
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 3), var(--w, 63.5mm));
+    grid-auto-rows: var(--h, 25.4mm);
+    column-gap: var(--gap-x, 2.6mm);
+    row-gap: var(--gap-y, 0mm);
+    padding-top: var(--mt, 8.8mm);
+    padding-bottom: var(--mt, 8.8mm);
+    padding-left: var(--ml, 7.2mm);
+    padding-right: var(--ml, 7.2mm);
+    align-content: start;
+    justify-content: start;
+    overflow: hidden;
+    position: relative; 
+    page-break-after: always; 
+    break-after: page; 
+  }
+  .pagina-a4:last-child { page-break-after: auto; break-after: auto; }
+
+  /* ── ETIQUETA RENDERIZADA ── */
+  .etiqueta { 
+    display: flex; 
+    flex-direction: column; 
+    box-sizing: border-box; 
+    position: relative; 
+    overflow: hidden; 
+    justify-content: center; 
+    width: 100%;
+    height: 100%;
+  }
+  .texto-container { display: flex; flex-direction: column; width: 100%; z-index: 2; }
+  .texto-etiqueta { display: block; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+  .etiqueta-logo { object-fit: contain; z-index: 1; max-width: 100%; max-height: 100%; }
+  .etiqueta-num { position: absolute; top: 2px; left: 4px; font-size: 7px; color: rgba(0,0,0,0.25); font-family: var(--mono); pointer-events: none; }
+
+  /* ── MODAIS ── */
+  #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+  #modal-overlay.aberto { display: flex; }
+  .modal-box { background: var(--branco); border-radius: var(--radius); padding: 24px; max-width: 500px; width: 90%; box-shadow: var(--shadow-card); }
+  .modal-box textarea { font-family: var(--mono); font-size: 0.8rem; min-height: 150px; background: var(--cinza-bg); margin-top: 10px; width: 100%; }
+  .modal-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+
+  #toast { position: fixed; bottom: 20px; right: 20px; background: var(--preto); color: white; padding: 10px 16px; border-radius: var(--radius-sm); font-size: 0.85rem; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.2s; }
+  #toast.visivel { transform: translateY(0); opacity: 1; }
+  #toast.sucesso { background: var(--verde); }
+  #toast.erro { background: var(--vermelho); }
+
+  /* ── IMPRESSÃO MILIMÉTRICA ── */
+  @media print {
+    body { background: none; }
+    #header, #painel, #stats-bar, #toast, #modal-overlay { display: none !important; }
+    #app { display: block; }
+    #area-previa { padding: 0; background: none; overflow: visible; }
+    #wrapper-etiquetas { box-shadow: none; }
+    .etiqueta { border-color: transparent !important; }
+    .etiqueta-num { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header id="header">
+  <div class="logo">
+    <div class="logo-icon">📐</div>
+    <span>EtiquetaPro</span>
+    <span class="logo-badge">Pimaco Edition</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-outline btn-sm" id="btnExportar">💾 Exportar Config</button>
+    <button class="btn btn-outline btn-sm" id="btnImportar">📂 Importar Config</button>
+    <button class="btn btn-primario btn-sm" id="btnImprimirHead">🖨️ Imprimir Folhas</button>
+  </div>
+</header>
+
+<div id="app">
+  <aside id="painel">
+
+    <div class="secao">
+      <div class="secao-titulo">📏 Gabarito / Medida da Etiqueta</div>
+      <div class="campo">
+        <label>Selecione o Modelo</label>
+        <select id="selectMedida">
+          <option value="custom" selected>⚙️ Medida personalizada...</option>
+          <optgroup label="Modelos A4 (210 × 297 mm)">
+            <option value="A4056">A4056 / A4256 / A4356 — 63,5 × 25,4 mm (33/folha)</option>
+            <option value="A4054">A4054 / A4254 / A4354 — 99,0 × 25,4 mm (22/folha)</option>
+            <option value="A4060">A4060 / A4260 / A4360 — 63,5 × 38,1 mm (21/folha)</option>
+            <option value="A4062">A4062 / A4262 / A4362 — 99,0 × 33,9 mm (16/folha)</option>
+            <option value="A4063">A4063 / A4263 / A4363 — 99,0 × 38,1 mm (14/folha)</option>
+            <option value="A4051">A4051 / A4251 / A4351 — 38,2 × 21,2 mm (65/folha)</option>
+            <option value="A4261">A4261 / A4361 — 63,5 × 46,5 mm (18/folha)</option>
+            <option value="A4264">A4264 / A4364 — 63,5 × 71,9 mm (12/folha)</option>
+            <option value="A4265">A4265 / A4365 — 99,0 × 67,8 mm (8/folha)</option>
+            <option value="A4268">A4268 / A4368 — 199,9 × 143,4 mm (2/folha)</option>
+            <option value="A4067">A4067 / A4267 / A4367 — 200,0 × 288,5 mm (1/folha)</option>
+          </optgroup>
+          <optgroup label="Modelos Carta (215,9 × 279,4 mm)">
+            <option value="6080">6080 / 6180 / 6280 — 66,7 × 25,4 mm (30/folha)</option>
+            <option value="6081">6081 / 6181 / 6281 — 101,6 × 25,4 mm (20/folha)</option>
+            <option value="6082">6082 / 6182 / 6282 — 101,6 × 33,9 mm (14/folha)</option>
+            <option value="6083">6083 / 6183 / 6283 — 101,6 × 50,8 mm (10/folha)</option>
+            <option value="6084">6084 / 6184 / 6284 — 101,6 × 84,7 mm (6/folha)</option>
+            <option value="6087">6087 / 6187 / 6287 — 44,4 × 12,7 mm (80/folha)</option>
+            <option value="6089">6089 — 44,4 × 16,9 mm (60/folha)</option>
+            <option value="6095">6095 — 85,7 × 59,3 mm (8/folha)</option>
+            <option value="8096">8096 — 69,8 × 69,8 mm (9/folha)</option>
+            <option value="8098">8098 — 88,9 × 42,3 mm (12/folha)</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="medida-custom ativo" id="divCustom">
+        <div class="campo"><label>Largura da Etiqueta (mm)</label><input type="number" id="customW" value="63.5" step="0.1"></div>
+        <div class="campo"><label>Altura da Etiqueta (mm)</label><input type="number" id="customH" value="25.4" step="0.1"></div>
+        <div class="campo"><label>Margem Topo (mm)</label><input type="number" id="customMT" value="8.8" step="0.1"></div>
+        <div class="campo"><label>Margem Lat. (mm)</label><input type="number" id="customML" value="7.2" step="0.1"></div>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">📄 Tamanho da Folha (Papel)</div>
+      <div class="campo" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label>Largura Folha (mm)</label>
+          <input type="number" id="folhaW" value="210" step="0.1">
+        </div>
+        <div>
+          <label>Altura Folha (mm)</label>
+          <input type="number" id="folhaH" value="297" step="0.1">
+        </div>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">📊 Controle de Colunas e Distribuição</div>
+      <div class="campo">
+        <label>Número de Colunas</label>
+        <select id="selectColunasModo">
+          <option value="auto" selected>Automático (Calculado por Medida)</option>
+          <option value="1">1 Coluna</option>
+          <option value="2">2 Colunas</option>
+          <option value="3">3 Colunas</option>
+          <option value="4">4 Colunas</option>
+          <option value="5">5 Colunas</option>
+          <option value="6">6 Colunas</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Afastamento Horizontal (Gap X)</label>
+        <div style="display: grid; grid-template-columns: 1fr 70px; gap: 8px;">
+          <input type="range" id="gapXRange" min="0" max="25" step="0.1" value="2.6">
+          <input type="number" id="gapXNum" value="2.6" step="0.1" style="padding: 4px 8px;">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Afastamento Vertical (Gap Y)</label>
+        <div style="display: grid; grid-template-columns: 1fr 70px; gap: 8px;">
+          <input type="range" id="gapYRange" min="0" max="25" step="0.1" value="0">
+          <input type="number" id="gapYNum" value="0" step="0.1" style="padding: 4px 8px;">
+        </div>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">✏️ Adicionar Item à Fila</div>
+      <div class="campo"><label>Linha principal</label><input type="text" id="textoLinha1" placeholder="Ex: SILICONE PRETO"></div>
+      <div class="campo"><label>Linha secundária</label><input type="text" id="textoLinha2" placeholder="Ex: ALTA TEMPERATURA"></div>
+      <div class="campo"><label>Linha terciária</label><input type="text" id="textoLinha3" placeholder="Ex: CONTEÚDO 50g"></div>
+      <div class="campo" style="display:grid; grid-template-columns: 1fr 100px; gap:8px; align-items:flex-end;">
+        <div><label>Quantidade</label><input type="number" id="qtdItem" value="12" min="1"></div>
+        <button type="button" class="btn btn-sucesso" id="btnAdicionarItem">➕ Incluir</button>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">📋 Itens na Fila de Impressão</div>
+      <div id="lista-itens-container"></div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">🔤 Tipografia</div>
+      <div class="campo">
+        <label>Fonte</label>
+        <select id="selectFonte">
+          <option value="Arial">Arial</option>
+          <option value="Segoe UI" selected>Segoe UI</option>
+          <option value="Trebuchet MS">Trebuchet MS</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Impact">Impact</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Georgia">Georgia</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Tamanho máximo <span class="valor-atual" id="labelFontSize">20px</span></label>
+        <input type="range" id="tamanhoFonte" min="8" max="50" value="20">
+      </div>
+      <div class="campo">
+        <label>Alinhamento</label>
+        <select id="selectAlinhamento">
+          <option value="center" selected>Centro</option>
+          <option value="left">Esquerda</option>
+          <option value="right">Direita</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Estilos</label>
+        <div class="checks">
+          <label class="check-item"><input type="checkbox" id="checkNegrito" checked> Negrito</label>
+          <label class="check-item"><input type="checkbox" id="checkItalico"> Itálico</label>
+          <label class="check-item"><input type="checkbox" id="checkSublinhado"> Sublinhado</label>
+          <label class="check-item"><input type="checkbox" id="checkSombra"> Sombra</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">🎨 Cores e Bordas</div>
+      <div class="campo">
+        <label>Temas rápidos</label>
+        <div class="temas-cores" id="wrapTemas"></div>
+      </div>
+      <div class="campo"><label>Cor do Texto</label><input type="color" id="corTexto" value="#1a1d23"></div>
+      <div class="campo"><label>Cor do Fundo</label><input type="color" id="corFundo" value="#ffffff"></div>
+      <div class="campo"><label>Cor da Borda</label><input type="color" id="corBorda" value="#ced4da"></div>
+      <div class="campo">
+        <label>Tipo de borda</label>
+        <select id="tipoBorda">
+          <option value="dashed" selected>Tracejado (Guia Visual)</option>
+          <option value="solid">Sólido</option>
+          <option value="dotted">Pontilhado</option>
+          <option value="none">Nenhum</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">🖨️ Modo de Impressão</div>
+      <div class="checks" style="flex-direction:column; gap:8px;">
+        <label class="check-item"><input type="radio" name="modoImpressao" value="completo" checked> Completo (Texto + Logo)</label>
+        <label class="check-item"><input type="radio" name="modoImpressao" value="texto"> Apenas Texto</label>
+        <label class="check-item"><input type="radio" name="modoImpressao" value="logo"> Somente Logo / Imagem</label>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">🖼️ Logo / Imagem</div>
+      <div class="campo">
+        <div id="upload-zona">Clique ou arraste a Logo (.png, .jpg, .svg)</div>
+        <input type="file" id="inputFileLogo" accept="image/*" style="display:none;">
+      </div>
+      <div class="campo">
+        <label>Tamanho da logo <span class="valor-atual" id="labelLogoSize">35%</span></label>
+        <input type="range" id="tamanhoLogo" min="10" max="100" value="35">
+      </div>
+      <div class="campo">
+        <label>Posição da logo</label>
+        <div class="posicao-grid">
+          <button type="button" class="pos-btn" data-pos="cima-esq">↖</button>
+          <button type="button" class="pos-btn" data-pos="cima-centro">↑</button>
+          <button type="button" class="pos-btn" data-pos="cima-dir">↗</button>
+          <button type="button" class="pos-btn" data-pos="centro-esq">←</button>
+          <button type="button" class="pos-btn ativo" data-pos="centro">✦</button>
+          <button type="button" class="pos-btn" data-pos="centro-dir">→</button>
+          <button type="button" class="pos-btn" data-pos="baixo-esq">↙</button>
+          <button type="button" class="pos-btn" data-pos="baixo-centro">↓</button>
+          <button type="button" class="pos-btn" data-pos="baixo-dir">↘</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">📐 Layout da Etiqueta Individual</div>
+      <div class="campo">
+        <label>Margem interna <span class="valor-atual" id="labelPadding">3mm</span></label>
+        <input type="range" id="paddingEtiqueta" min="0" max="15" value="3">
+      </div>
+      <div class="campo">
+        <label>Arredondamento <span class="valor-atual" id="labelRadius">0mm</span></label>
+        <input type="range" id="radiusEtiqueta" min="0" max="20" value="0">
+      </div>
+      <div class="campo">
+        <label>Opções de exibição</label>
+        <div class="checks">
+          <label class="check-item"><input type="checkbox" id="checkNumeros" checked> Nº etiqueta (Guia)</label>
+          <label class="check-item"><input type="checkbox" id="checkLinhasCorte" checked> Linhas de corte</label>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <main id="area-previa">
+    <div id="stats-bar">
+      <div class="stat-card"><div class="stat-label">Total Etiquetas</div><div class="stat-valor" id="statTotal">0</div></div>
+      <div class="stat-card"><div class="stat-label" id="lblPorFolha">Por Folha</div><div class="stat-valor" id="statPorFolha">0</div></div>
+      <div class="stat-card"><div class="stat-label" id="lblFolhas">Folhas Necessárias</div><div class="stat-valor" id="statFolhas" style="color:var(--azul);">0</div></div>
+      <div class="stat-card"><div class="stat-label">Dimensões</div><div class="stat-valor" id="statDim">0 x 0 mm</div></div>
+    </div>
+
+    <div id="wrapper-etiquetas">
+      <div id="container-etiquetas"></div>
+    </div>
+  </main>
+</div>
+
+<div id="modal-overlay">
+  <div class="modal-box">
+    <h3>📂 Configuração JSON</h3>
+    <textarea id="modal-json" rows="8" placeholder="Cole o código JSON aqui..."></textarea>
+    <div class="modal-btns">
+      <button class="btn btn-outline btn-sm" id="modal-cancelar">Cancelar</button>
+      <button class="btn btn-sucesso btn-sm" id="modal-confirmar">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// --- CATÁLOGO DE GABARITOS OFICIAIS PIMACO ---
+const PIMACO_TEMPLATES = {
+  // Modelos A4 (210 × 297 mm)
+  'A4056': {
+    codigo: 'A4056 / A4256 / A4356',
+    nome: 'A4056 / A4256 / A4356 — 63,5 × 25,4 mm (33/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 63.5,
+    h: 25.4,
+    mt: 8.8,
+    ml: 7.2,
+    gapX: 2.6,
+    gapY: 0.0,
+    colunas: 3,
+    linhas: 11,
+    totalPorFolha: 33,
+    tipoPapel: 'A4'
+  },
+  'A4054': {
+    codigo: 'A4054 / A4254 / A4354',
+    nome: 'A4054 / A4254 / A4354 — 99,0 × 25,4 mm (22/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 99.0,
+    h: 25.4,
+    mt: 8.8,
+    ml: 4.7,
+    gapX: 2.6,
+    gapY: 0.0,
+    colunas: 2,
+    linhas: 11,
+    totalPorFolha: 22,
+    tipoPapel: 'A4'
+  },
+  'A4060': {
+    codigo: 'A4060 / A4260 / A4360',
+    nome: 'A4060 / A4260 / A4360 — 63,5 × 38,1 mm (21/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 63.5,
+    h: 38.1,
+    mt: 15.2,
+    ml: 7.2,
+    gapX: 2.6,
+    gapY: 0.0,
+    colunas: 3,
+    linhas: 7,
+    totalPorFolha: 21,
+    tipoPapel: 'A4'
+  },
+  'A4062': {
+    codigo: 'A4062 / A4262 / A4362',
+    nome: 'A4062 / A4262 / A4362 — 99,0 × 33,9 mm (16/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 99.0,
+    h: 33.9,
+    mt: 12.9,
+    ml: 4.7,
+    gapX: 2.6,
+    gapY: 0.0,
+    colunas: 2,
+    linhas: 8,
+    totalPorFolha: 16,
+    tipoPapel: 'A4'
+  },
+  'A4063': {
+    codigo: 'A4063 / A4263 / A4363',
+    nome: 'A4063 / A4263 / A4363 — 99,0 × 38,1 mm (14/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 99.0,
+    h: 38.1,
+    mt: 15.2,
+    ml: 4.7,
+    gapX: 2.6,
+    gapY: 0.0,
+    colunas: 2,
+    linhas: 7,
+    totalPorFolha: 14,
+    tipoPapel: 'A4'
+  },
+  'A4051': {
+    codigo: 'A4051 / A4251 / A4351',
+    nome: 'A4051 / A4251 / A4351 — 38,2 × 21,2 mm (65/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 38.2,
+    h: 21.2,
+    mt: 10.7,
+    ml: 4.5,
+    gapX: 2.5,
+    gapY: 0.0,
+    colunas: 5,
+    linhas: 13,
+    totalPorFolha: 65,
+    tipoPapel: 'A4'
+  },
+  'A4261': {
+    codigo: 'A4261 / A4361',
+    nome: 'A4261 / A4361 — 63,5 × 46,5 mm (18/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 63.5,
+    h: 46.5,
+    mt: 9.1,
+    ml: 7.2,
+    gapX: 2.6,
+    gapY: 0.0,
+    colunas: 3,
+    linhas: 6,
+    totalPorFolha: 18,
+    tipoPapel: 'A4'
+  },
+  'A4264': {
+    codigo: 'A4264 / A4364',
+    nome: 'A4264 / A4364 — 63,5 × 71,9 mm (12/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 63.5,
+    h: 71.9,
+    mt: 4.7,
+    ml: 7.2,
+    gapX: 2.6,
+    gapY: 0.0,
+    colunas: 3,
+    linhas: 4,
+    totalPorFolha: 12,
+    tipoPapel: 'A4'
+  },
+  'A4265': {
+    codigo: 'A4265 / A4365',
+    nome: 'A4265 / A4365 — 99,0 × 67,8 mm (8/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 99.0,
+    h: 67.8,
+    mt: 13.0,
+    ml: 4.7,
+    gapX: 2.6,
+    gapY: 0.0,
+    colunas: 2,
+    linhas: 4,
+    totalPorFolha: 8,
+    tipoPapel: 'A4'
+  },
+  'A4268': {
+    codigo: 'A4268 / A4368',
+    nome: 'A4268 / A4368 — 199,9 × 143,4 mm (2/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 199.9,
+    h: 143.4,
+    mt: 5.1,
+    ml: 5.1,
+    gapX: 0.0,
+    gapY: 0.0,
+    colunas: 1,
+    linhas: 2,
+    totalPorFolha: 2,
+    tipoPapel: 'A4'
+  },
+  'A4067': {
+    codigo: 'A4067 / A4267 / A4367',
+    nome: 'A4067 / A4267 / A4367 — 200,0 × 288,5 mm (1/folha)',
+    folhaW: 210.0,
+    folhaH: 297.0,
+    w: 200.0,
+    h: 288.5,
+    mt: 4.3,
+    ml: 5.0,
+    gapX: 0.0,
+    gapY: 0.0,
+    colunas: 1,
+    linhas: 1,
+    totalPorFolha: 1,
+    tipoPapel: 'A4'
+  },
+
+  // Modelos Carta (215.9 × 279.4 mm)
+  '6080': {
+    codigo: '6080 / 6180 / 6280',
+    nome: '6080 / 6180 / 6280 — 66,7 × 25,4 mm (30/folha)',
+    folhaW: 215.9,
+    folhaH: 279.4,
+    w: 66.7,
+    h: 25.4,
+    mt: 12.7,
+    ml: 4.8,
+    gapX: 3.1,
+    gapY: 0.0,
+    colunas: 3,
+    linhas: 10,
+    totalPorFolha: 30,
+    tipoPapel: 'Carta'
+  },
+  '6081': {
+    codigo: '6081 / 6181 / 6281',
+    nome: '6081 / 6181 / 6281 — 101,6 × 25,4 mm (20/folha)',
+    folhaW: 215.9,
+    folhaH: 279.4,
+    w: 101.6,
+    h: 25.4,
+    mt: 12.7,
+    ml: 4.0,
+    gapX: 5.2,
+    gapY: 0.0,
+    colunas: 2,
+    linhas: 10,
+    totalPorFolha: 20,
+    tipoPapel: 'Carta'
+  },
+  '6082': {
+    codigo: '6082 / 6182 / 6282',
+    nome: '6082 / 6182 / 6282 — 101,6 × 33,9 mm (14/folha)',
+    folhaW: 215.9,
+    folhaH: 279.4,
+    w: 101.6,
+    h: 33.9,
+    mt: 21.2,
+    ml: 4.0,
+    gapX: 5.2,
+    gapY: 0.0,
+    colunas: 2,
+    linhas: 7,
+    totalPorFolha: 14,
+    tipoPapel: 'Carta'
+  },
+  '6083': {
+    codigo: '6083 / 6183 / 6283',
+    nome: '6083 / 6183 / 6283 — 101,6 × 50,8 mm (10/folha)',
+    folhaW: 215.9,
+    folhaH: 279.4,
+    w: 101.6,
+    h: 50.8,
+    mt: 12.7,
+    ml: 4.0,
+    gapX: 5.2,
+    gapY: 0.0,
+    colunas: 2,
+    linhas: 5,
+    totalPorFolha: 10,
+    tipoPapel: 'Carta'
+  },
+  '6084': {
+    codigo: '6084 / 6184 / 6284',
+    nome: '6084 / 6184 / 6284 — 101,6 × 84,7 mm (6/folha)',
+    folhaW: 215.9,
+    folhaH: 279.4,
+    w: 101.6,
+    h: 84.7,
+    mt: 12.7,
+    ml: 4.0,
+    gapX: 5.2,
+    gapY: 0.0,
+    colunas: 2,
+    linhas: 3,
+    totalPorFolha: 6,
+    tipoPapel: 'Carta'
+  },
+  '6087': {
+    codigo: '6087 / 6187 / 6287',
+    nome: '6087 / 6187 / 6287 — 44,4 × 12,7 mm (80/folha)',
+    folhaW: 215.9,
+    folhaH: 279.4,
+    w: 44.4,
+    h: 12.7,
+    mt: 12.7,
+    ml: 14.5,
+    gapX: 3.1,
+    gapY: 0.0,
+    colunas: 4,
+    linhas: 20,
+    totalPorFolha: 80,
+    tipoPapel: 'Carta'
+  },
+  '6089': {
+    codigo: '6089',
+    nome: '6089 — 44,4 × 16,9 mm (60/folha)',
+    folhaW: 215.9,
+    folhaH: 279.4,
+    w: 44.4,
+    h: 16.9,
+    mt: 12.7,
+    ml: 14.5,
+    gapX: 3.1,
+    gapY: 0.0,
+    colunas: 4,
+    linhas: 15,
+    totalPorFolha: 60,
+    tipoPapel: 'Carta'
+  },
+  '6095': {
+    codigo: '6095',
+    nome: '6095 — 85,7 × 59,3 mm (8/folha)',
+    folhaW: 215.9,
+    folhaH: 279.4,
+    w: 85.7,
+    h: 59.3,
+    mt: 21.2,
+    ml: 17.0,
+    gapX: 10.6,
+    gapY: 0.0,
+    colunas: 2,
+    linhas: 4,
+    totalPorFolha: 8,
+    tipoPapel: 'Carta'
+  },
+  '8096': {
+    codigo: '8096',
+    nome: '8096 — 69,8 × 69,8 mm (9/folha)',
+    folhaW: 215.9,
+    folhaH: 279.4,
+    w: 69.8,
+    h: 69.8,
+    mt: 12.7,
+    ml: 3.2,
+    gapX: 0.0,
+    gapY: 6.4,
+    colunas: 3,
+    linhas: 3,
+    totalPorFolha: 9,
+    tipoPapel: 'Carta'
+  },
+  '8098': {
+    codigo: '8098',
+    nome: '8098 — 88,9 × 42,3 mm (12/folha)',
+    folhaW: 215.9,
+    folhaH: 279.4,
+    w: 88.9,
+    h: 42.3,
+    mt: 12.7,
+    ml: 12.7,
+    gapX: 12.7,
+    gapY: 0.0,
+    colunas: 2,
+    linhas: 6,
+    totalPorFolha: 12,
+    tipoPapel: 'Carta'
+  }
+};
+
+// --- VARIÁVEIS GLOBAIS ---
+let listaItens = [
+  { linha1: "SILICONE PRETO", linha2: "ALTA PERFORMANCE", linha3: "REF: 500G", qtd: 24 }
+];
+let logoDataUrl = null;
+let posicaoLogo = "centro";
+
+const THEMES = [
+  { nome: 'Monocromático', texto: '#1a1d23', fundo: '#ffffff', borda: '#ced4da' },
+  { nome: 'Azul Moderno', texto: '#1a56db', fundo: '#ffffff', borda: '#1a56db' },
+  { nome: 'Verde Eco', texto: '#057a55', fundo: '#ffffff', borda: '#057a55' },
+  { nome: 'Preto Total', texto: '#ffffff', fundo: '#1a1d23', borda: '#1a1d23' },
+  { nome: 'Alerta Amarelo', texto: '#78350f', fundo: '#fef3c7', borda: '#f59e0b' }
+];
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderizarTemasRapidos();
+  atualizarListaFilaVisual();
+  inicializarEventos();
+  gerar();
+});
+
+function renderizarTemasRapidos() {
+  const wrap = document.getElementById('wrapTemas');
+  THEMES.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'tema-cor' + (i === 0 ? ' ativo' : '');
+    el.title = t.nome;
+    el.style.setProperty('--tema-texto', t.texto);
+    el.style.setProperty('--tema-fundo', t.fundo);
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.tema-cor').forEach(x => x.classList.remove('ativo'));
+      el.classList.add('ativo');
+      document.getElementById('corTexto').value = t.texto;
+      document.getElementById('corFundo').value = t.fundo;
+      document.getElementById('corBorda').value = t.borda;
+      gerar();
+    });
+    wrap.appendChild(el);
+  });
+}
+
+function toast(msg, tipo = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'visivel ' + tipo;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 2500);
+}
+
+function getMedida() {
+  const sel = document.getElementById('selectMedida').value;
+  if (sel !== 'custom' && PIMACO_TEMPLATES[sel]) {
+    const t = PIMACO_TEMPLATES[sel];
+    return {
+      w: t.w,
+      h: t.h,
+      mt: t.mt,
+      ml: t.ml,
+      gapX: t.gapX,
+      gapY: t.gapY,
+      folhaW: t.folhaW,
+      folhaH: t.folhaH,
+      fixedCols: t.colunas
+    };
+  }
+  return {
+    w: parseFloat(document.getElementById('customW').value) || 63.5,
+    h: parseFloat(document.getElementById('customH').value) || 25.4,
+    mt: parseFloat(document.getElementById('customMT').value) || 0.0,
+    ml: parseFloat(document.getElementById('customML').value) || 0.0,
+    gapX: parseFloat(document.getElementById('gapXNum').value) || 0.0,
+    gapY: parseFloat(document.getElementById('gapYNum').value) || 0.0,
+    folhaW: parseFloat(document.getElementById('folhaW').value) || 210.0,
+    folhaH: parseFloat(document.getElementById('folhaH').value) || 297.0,
+    fixedCols: "auto"
+  };
+}
+
+function getPosicaoCSS(pos, sizePerc) {
+  let absPos = "";
+  switch(pos) {
+    case 'cima-esq': absPos = "top:4px; left:4px; position:absolute;"; break;
+    case 'cima-centro': absPos = "top:4px; left:50%; transform:translateX(-50%); position:absolute;"; break;
+    case 'cima-dir': absPos = "top:4px; right:4px; position:absolute;"; break;
+    case 'centro-esq': absPos = "top:50%; left:4px; transform:translateY(-50%); position:absolute;"; break;
+    case 'centro': absPos = "top:50%; left:50%; transform:translate(-50%, -50%); position:absolute;"; break;
+    case 'centro-dir': absPos = "top:50%; right:4px; transform:translateY(-50%); position:absolute;"; break;
+    case 'baixo-esq': absPos = "bottom:4px; left:4px; position:absolute;"; break;
+    case 'baixo-centro': absPos = "bottom:4px; left:50%; transform:translateX(-50%); position:absolute;"; break;
+    case 'baixo-dir': absPos = "bottom:4px; right:4px; position:absolute;"; break;
+  }
+  return absPos;
+}
+
+function gerar() {
+  const container = document.getElementById('container-etiquetas');
+  container.innerHTML = '';
+  
+  const medida = getMedida();
+  
+  // Captura do tamanho da folha
+  const folhaW = parseFloat(document.getElementById('folhaW').value) || medida.folhaW || 210;
+  const folhaH = parseFloat(document.getElementById('folhaH').value) || medida.folhaH || 297;
+  
+  container.style.setProperty('--folha-w', folhaW + 'mm');
+  container.style.setProperty('--folha-h', folhaH + 'mm');
+  
+  const statsBar = document.getElementById('stats-bar');
+  if (statsBar) {
+    statsBar.style.setProperty('--folha-w', folhaW + 'mm');
+  }
+  
+  // Regra @page dinâmica para impressão com precisão milimétrica
+  let stylePage = document.getElementById('dynamic-page-css');
+  if (!stylePage) {
+    stylePage = document.createElement('style');
+    stylePage.id = 'dynamic-page-css';
+    document.head.appendChild(stylePage);
+  }
+  stylePage.innerHTML = `@media print { @page { size: ${folhaW}mm ${folhaH}mm; margin: 0; } }`;
+
+  const w = medida.w;
+  const h = medida.h;
+  const mt = medida.mt;
+  const ml = medida.ml;
+
+  const colunasModo = document.getElementById('selectColunasModo').value;
+  const gapX = parseFloat(document.getElementById('gapXNum').value) || 0;
+  const gapY = parseFloat(document.getElementById('gapYNum').value) || 0;
+
+  // Cálculo matemático preciso de colunas e linhas
+  let colunas = 3;
+  if (colunasModo === 'auto') {
+    if (medida.fixedCols && medida.fixedCols !== "auto") {
+      colunas = parseInt(medida.fixedCols);
+    } else {
+      colunas = Math.max(1, Math.floor(((folhaW - (ml * 2)) + 0.1 + gapX) / (w + gapX)));
+    }
+  } else {
+    colunas = parseInt(colunasModo);
+  }
+
+  const linhas = Math.max(1, Math.floor(((folhaH - (mt * 2)) + 0.1 + gapY) / (h + gapY)));
+  const porFolha = colunas * linhas;
+
+  const fonte = document.getElementById('selectFonte').value;
+  const tamanhoBase = parseInt(document.getElementById('tamanhoFonte').value) || 20;
+  const align = document.getElementById('selectAlinhamento').value;
+  
+  const corT = document.getElementById('corTexto').value;
+  const corF = document.getElementById('corFundo').value;
+  const corB = document.getElementById('corBorda').value;
+  const tipoBorda = document.getElementById('tipoBorda').value;
+  
+  const negrito = document.getElementById('checkNegrito').checked ? 'bold' : 'normal';
+  const italico = document.getElementById('checkItalico').checked ? 'italic' : 'normal';
+  const sublinha = document.getElementById('checkSublinhado').checked ? 'underline' : 'none';
+  const sombra = document.getElementById('checkSombra').checked;
+  
+  const modoImpressao = document.querySelector('input[name="modoImpressao"]:checked').value;
+  const tamanhoLogoPerc = parseInt(document.getElementById('tamanhoLogo').value) || 35;
+  
+  const pad = parseInt(document.getElementById('paddingEtiqueta').value) || 3;
+  const rad = parseInt(document.getElementById('radiusEtiqueta').value) || 0;
+  const showNum = document.getElementById('checkNumeros').checked;
+  const showCorte = document.getElementById('checkLinhasCorte').checked;
+
+  let contadorGlobal = 0;
+  let filaItens = [];
+  listaItens.forEach(item => { for(let i=0; i<item.qtd; i++) filaItens.push(item); });
+
+  function montarConteudoEtiqueta(item, indexNum) {
+      const div = document.createElement('div');
+      div.className = 'etiqueta';
+      div.style.backgroundColor = corF;
+      div.style.padding = pad + 'mm';
+      div.style.borderRadius = rad + 'mm';
+      
+      if (tipoBorda !== 'none' && showCorte) div.style.border = `0.2mm ${tipoBorda} ${corB}`;
+      else div.style.border = '0.2mm solid transparent';
+
+      if (showNum) {
+        const num = document.createElement('span');
+        num.className = 'etiqueta-num';
+        num.innerText = indexNum;
+        div.appendChild(num);
+      }
+
+      if ((modoImpressao === 'completo' || modoImpressao === 'logo') && logoDataUrl) {
+        const img = document.createElement('img');
+        img.className = 'etiqueta-logo';
+        img.src = logoDataUrl;
+        if (modoImpressao === 'completo') {
+          img.style.width = tamanhoLogoPerc + '%';
+          img.style.cssText += getPosicaoCSS(posicaoLogo, tamanhoLogoPerc);
+        } else {
+          img.style.cssText = "position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);";
+          img.style.width = tamanhoLogoPerc + '%';
+          img.style.height = '85%';
+        }
+        div.appendChild(img);
+      }
+
+      if (modoImpressao !== 'logo') {
+        const txtContainer = document.createElement('div');
+        txtContainer.className = 'texto-container';
+        txtContainer.style.textAlign = align;
+
+        function appendLinha(texto, scale) {
+          if (!texto) return;
+          const span = document.createElement('span');
+          span.className = 'texto-etiqueta';
+          span.style.fontFamily = fonte;
+          span.style.color = corT;
+          span.style.fontWeight = negrito;
+          span.style.fontStyle = italico;
+          span.style.textDecoration = sublinha;
+          span.innerText = texto;
+          if (sombra) span.style.textShadow = '1px 1px 2px rgba(0,0,0,0.2)';
+          span.style.fontSize = (tamanhoBase * scale) + 'px';
+          txtContainer.appendChild(span);
+        }
+        appendLinha(item.linha1, 1.0);
+        appendLinha(item.linha2, 0.8);
+        appendLinha(item.linha3, 0.65);
+        div.appendChild(txtContainer);
+      }
+      return div;
+  }
+
+  let pgAtual = null;
+  let usadasNaPagina = 0;
+
+  function criarNovaPagina() {
+    const pg = document.createElement('div');
+    pg.className = 'pagina-a4';
+    
+    pg.style.setProperty('--folha-w', folhaW + 'mm');
+    pg.style.setProperty('--folha-h', folhaH + 'mm');
+    pg.style.setProperty('--cols', colunas);
+    pg.style.setProperty('--w', w + 'mm');
+    pg.style.setProperty('--h', h + 'mm');
+    pg.style.setProperty('--mt', mt + 'mm');
+    pg.style.setProperty('--ml', ml + 'mm');
+    pg.style.setProperty('--gap-x', gapX + 'mm');
+    pg.style.setProperty('--gap-y', gapY + 'mm');
+    
+    container.appendChild(pg);
+    return pg;
+  }
+  
+  if(filaItens.length > 0) pgAtual = criarNovaPagina();
+
+  filaItens.forEach(item => {
+      if (usadasNaPagina >= porFolha) {
+        pgAtual = criarNovaPagina();
+        usadasNaPagina = 0;
+      }
+      contadorGlobal++;
+      usadasNaPagina++;
+      pgAtual.appendChild(montarConteudoEtiqueta(item, contadorGlobal));
+  });
+
+  let totalFolhas = Math.ceil(contadorGlobal / porFolha) || 0;
+
+  document.getElementById('statTotal').textContent = contadorGlobal;
+  document.getElementById('statPorFolha').textContent = porFolha;
+  document.getElementById('statFolhas').textContent = totalFolhas;
+  document.getElementById('statDim').textContent = `${w.toFixed(1)} x ${h.toFixed(1)} mm`;
+  
+  const selMedida = document.getElementById('selectMedida').value;
+  const isCustom = selMedida === 'custom';
+  document.getElementById('lblPorFolha').textContent = isCustom ? `Por Folha (${colunas}x${linhas})` : `Por Folha (${colunas} col × ${linhas} lin)`;
+  document.getElementById('lblFolhas').textContent = `Folhas Necessárias`;
+}
+
+function atualizarListaFilaVisual() {
+  const container = document.getElementById('lista-itens-container');
+  container.innerHTML = '';
+  if(listaItens.length === 0) {
+    container.innerHTML = `<div style="font-size:0.8rem;color:var(--cinza-texto);text-align:center;padding:10px;">Fila vazia.</div>`;
+    return;
+  }
+  listaItens.forEach((item, index) => {
+    const el = document.createElement('div');
+    el.className = 'fila-item';
+    el.innerHTML = `<span class="fila-item-texto"><strong>${item.qtd}x</strong> — ${item.linha1}</span>
+                    <button class="btn-deletar-item" onclick="removerItemFila(${index})">✕</button>`;
+    container.appendChild(el);
+  });
+}
+
+function removerItemFila(index) {
+  listaItens.splice(index, 1);
+  atualizarListaFilaVisual();
+  gerar();
+  toast('Item removido da fila!');
+}
+
+function inicializarEventos() {
+  const gxRange = document.getElementById('gapXRange');
+  const gxNum = document.getElementById('gapXNum');
+  gxRange.addEventListener('input', (e) => { gxNum.value = e.target.value; gerar(); });
+  gxNum.addEventListener('input', (e) => { gxRange.value = e.target.value; gerar(); });
+
+  const gyRange = document.getElementById('gapYRange');
+  const gyNum = document.getElementById('gapYNum');
+  gyRange.addEventListener('input', (e) => { gyNum.value = e.target.value; gerar(); });
+  gyNum.addEventListener('input', (e) => { gyRange.value = e.target.value; gerar(); });
+
+  document.getElementById('selectColunasModo').addEventListener('change', gerar);
+
+  document.getElementById('btnAdicionarItem').addEventListener('click', () => {
+    const l1 = document.getElementById('textoLinha1').value.trim();
+    if (!l1) { toast('A Linha Principal é obrigatória!', 'erro'); return; }
+    listaItens.push({
+      linha1: l1.toUpperCase(),
+      linha2: document.getElementById('textoLinha2').value.trim().toUpperCase(),
+      linha3: document.getElementById('textoLinha3').value.trim().toUpperCase(),
+      qtd: Math.max(1, parseInt(document.getElementById('qtdItem').value) || 1)
+    });
+    document.getElementById('textoLinha1').value = '';
+    document.getElementById('textoLinha2').value = '';
+    document.getElementById('textoLinha3').value = '';
+    document.getElementById('qtdItem').value = '12';
+    atualizarListaFilaVisual();
+    gerar();
+    toast('Item adicionado à fila!', 'sucesso');
+  });
+
+  document.getElementById('selectMedida').addEventListener('change', (e) => {
+    const val = e.target.value;
+    const isCustom = val === 'custom';
+    const divCustom = document.getElementById('divCustom');
+    
+    divCustom.classList.toggle('ativo', isCustom);
+    
+    if (!isCustom && PIMACO_TEMPLATES[val]) {
+      const t = PIMACO_TEMPLATES[val];
+      
+      // Atualiza tamanho da folha
+      document.getElementById('folhaW').value = t.folhaW;
+      document.getElementById('folhaH').value = t.folhaH;
+      
+      // Atualiza Gaps
+      document.getElementById('gapXRange').value = t.gapX;
+      document.getElementById('gapXNum').value = t.gapX;
+      document.getElementById('gapYRange').value = t.gapY;
+      document.getElementById('gapYNum').value = t.gapY;
+      
+      // Atualiza Dimensões e Margens
+      document.getElementById('customW').value = t.w;
+      document.getElementById('customH').value = t.h;
+      document.getElementById('customMT').value = t.mt;
+      document.getElementById('customML').value = t.ml;
+      
+      // Atualiza Colunas
+      document.getElementById('selectColunasModo').value = t.colunas.toString();
+      
+      toast(`Gabarito Pimaco ${t.codigo} carregado!`, 'sucesso');
+    }
+    gerar();
+  });
+
+  document.getElementById('tamanhoFonte').addEventListener('input', (e) => { document.getElementById('labelFontSize').textContent = e.target.value + 'px'; gerar(); });
+  document.getElementById('tamanhoLogo').addEventListener('input', (e) => { document.getElementById('labelLogoSize').textContent = e.target.value + '%'; gerar(); });
+  document.getElementById('paddingEtiqueta').addEventListener('input', (e) => { document.getElementById('labelPadding').textContent = e.target.value + 'mm'; gerar(); });
+  document.getElementById('radiusEtiqueta').addEventListener('input', (e) => { document.getElementById('labelRadius').textContent = e.target.value + 'mm'; gerar(); });
+
+  document.querySelectorAll('.pos-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('ativo'));
+      btn.classList.add('ativo');
+      posicaoLogo = btn.getAttribute('data-pos');
+      gerar();
+    });
+  });
+
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if(el.id === 'modal-json' || el.id === 'textoLinha1' || el.id === 'textoLinha2' || el.id === 'textoLinha3' || el.id === 'qtdItem') return;
+    el.addEventListener('input', gerar);
+    el.addEventListener('change', gerar);
+  });
+
+  document.getElementById('btnImprimirHead').addEventListener('click', () => window.print());
+  
+  const zona = document.getElementById('upload-zona');
+  const fileInput = document.getElementById('inputFileLogo');
+  zona.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => carregarImagem(e.target.files[0]));
+  zona.addEventListener('dragover', (e) => { e.preventDefault(); zona.style.borderColor = 'var(--azul)'; });
+  zona.addEventListener('dragleave', () => zona.style.borderColor = '');
+  zona.addEventListener('drop', (e) => {
+    e.preventDefault(); zona.style.borderColor = '';
+    if(e.dataTransfer.files.length > 0) carregarImagem(e.dataTransfer.files[0]);
+  });
+
+  function carregarImagem(file) {
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      logoDataUrl = e.target.result;
+      zona.textContent = "✓ " + file.name;
+      zona.className = "com-imagem";
+      gerar();
+      toast('Logo carregada com sucesso!', 'sucesso');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  document.getElementById('btnExportar').addEventListener('click', () => {
+    const config = {
+      listaItens, 
+      folhaW: document.getElementById('folhaW').value,
+      folhaH: document.getElementById('folhaH').value,
+      medida: document.getElementById('selectMedida').value,
+      colunasModo: document.getElementById('selectColunasModo').value,
+      gapX: document.getElementById('gapXNum').value,
+      gapY: document.getElementById('gapYNum').value,
+      customW: document.getElementById('customW').value, 
+      customH: document.getElementById('customH').value,
+      customMT: document.getElementById('customMT').value, 
+      customML: document.getElementById('customML').value,
+      fonte: document.getElementById('selectFonte').value, 
+      fontSize: document.getElementById('tamanhoFonte').value,
+      align: document.getElementById('selectAlinhamento').value, 
+      corTexto: document.getElementById('corTexto').value,
+      corFundo: document.getElementById('corFundo').value, 
+      corBorda: document.getElementById('corBorda').value,
+      tipoBorda: document.getElementById('tipoBorda').value, 
+      padding: document.getElementById('paddingEtiqueta').value,
+      radius: document.getElementById('radiusEtiqueta').value,
+      modoImpressao: document.querySelector('input[name="modoImpressao"]:checked').value,
+      tamanhoLogo: document.getElementById('tamanhoLogo').value, 
+      posicaoLogo
+    };
+    document.getElementById('modal-json').value = JSON.stringify(config, null, 2);
+    document.getElementById('modal-overlay').classList.add('aberto');
+  });
+
+  document.getElementById('btnImportar').addEventListener('click', () => {
+    document.getElementById('modal-json').value = '';
+    document.getElementById('modal-overlay').classList.add('aberto');
+  });
+
+  document.getElementById('modal-cancelar').addEventListener('click', () => document.getElementById('modal-overlay').classList.remove('aberto'));
+  document.getElementById('modal-confirmar').addEventListener('click', () => {
+    try {
+      const c = JSON.parse(document.getElementById('modal-json').value.trim());
+      if(c.listaItens) listaItens = c.listaItens;
+      if(c.folhaW) document.getElementById('folhaW').value = c.folhaW;
+      if(c.folhaH) document.getElementById('folhaH').value = c.folhaH;
+      if(c.medida) document.getElementById('selectMedida').value = c.medida;
+      if(c.colunasModo) document.getElementById('selectColunasModo').value = c.colunasModo;
+      if(c.gapX !== undefined) { document.getElementById('gapXNum').value = c.gapX; document.getElementById('gapXRange').value = c.gapX; }
+      if(c.gapY !== undefined) { document.getElementById('gapYNum').value = c.gapY; document.getElementById('gapYRange').value = c.gapY; }
+      if(c.customW) document.getElementById('customW').value = c.customW;
+      if(c.customH) document.getElementById('customH').value = c.customH;
+      if(c.customMT) document.getElementById('customMT').value = c.customMT;
+      if(c.customML) document.getElementById('customML').value = c.customML;
+      if(c.fonte) document.getElementById('selectFonte').value = c.fonte;
+      if(c.fontSize) { document.getElementById('tamanhoFonte').value = c.fontSize; document.getElementById('labelFontSize').textContent = c.fontSize + 'px'; }
+      if(c.align) document.getElementById('selectAlinhamento').value = c.align;
+      if(c.corTexto) document.getElementById('corTexto').value = c.corTexto;
+      if(c.corFundo) document.getElementById('corFundo').value = c.corFundo;
+      if(c.corBorda) document.getElementById('corBorda').value = c.corBorda;
+      if(c.tipoBorda) document.getElementById('tipoBorda').value = c.tipoBorda;
+      if(c.padding) { document.getElementById('paddingEtiqueta').value = c.padding; document.getElementById('labelPadding').textContent = c.padding + 'mm'; }
+      if(c.radius) { document.getElementById('radiusEtiqueta').value = c.radius; document.getElementById('labelRadius').textContent = c.radius + 'mm'; }
+      if(c.tamanhoLogo) { document.getElementById('tamanhoLogo').value = c.tamanhoLogo; document.getElementById('labelLogoSize').textContent = c.tamanhoLogo + '%'; }
+      if(c.posicaoLogo) { posicaoLogo = c.posicaoLogo; document.querySelectorAll('.pos-btn').forEach(b => b.classList.toggle('ativo', b.getAttribute('data-pos') === posicaoLogo)); }
+      if(c.modoImpressao) { const rad = document.querySelector(`input[name="modoImpressao"][value="${c.modoImpressao}"]`); if(rad) rad.checked = true; }
+      
+      document.getElementById('divCustom').classList.toggle('ativo', document.getElementById('selectMedida').value === 'custom');
+      
+      atualizarListaFilaVisual();
+      gerar();
+      document.getElementById('modal-overlay').classList.remove('aberto');
+      toast('Configurações aplicadas com sucesso!', 'sucesso');
+    } catch(err) { alert('JSON inválido ou corrompido.'); }
+  });
+}
+</script>
+</body>
+</html>
