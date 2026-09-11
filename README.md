@@ -11,7 +11,8 @@
 
 ## 📱 Demonstração e Instalação
 
-- **Aplicação Online (GitHub Pages)**: `https://[SEU-USUARIO].github.io/[NOME-DO-REPOSITORIO]/`
+- **Aplicação Online (GitHub Pages)**: [https://wallacextreme.github.io/etiquetapro/](https://wallacextreme.github.io/etiquetapro/)
+- **Repositório GitHub**: [https://github.com/wallacextreme/etiquetapro](https://github.com/wallacextreme/etiquetapro)
 - **PWA Android**: Acesse pelo Google Chrome no celular e toque no botão **"📲 Instalar App"** no cabeçalho (ou no menu *Adicionar à tela inicial*).
 - **Desktop**: Totalmente funcional no navegador ou como aplicativo de janela independente (PWA Standalone).
 
